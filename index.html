@@ -1,0 +1,547 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f7f0">
+  <title>Daybook</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #25352f;
+      --muted: #78847d;
+      --line: #e5eae2;
+      --paper: #fffefa;
+      --canvas: #f4f7f0;
+      --green: #326c54;
+      --green-soft: #e8f1e9;
+      --yellow: #f4c957;
+      --coral: #dc795f;
+      --shadow: 0 12px 34px rgba(36, 58, 45, .055);
+    }
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --ink: #e5eee8;
+      --muted: #a3b2a9;
+      --line: #3a4a41;
+      --paper: #202c25;
+      --canvas: #17211b;
+      --green: #8bc5a3;
+      --green-soft: #2c4034;
+      --shadow: 0 12px 34px rgba(0, 0, 0, .18);
+    }
+    * { box-sizing: border-box; }
+    .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background-color: var(--canvas);
+      background-image: radial-gradient(#dfe7dc 0.75px, transparent 0.75px);
+      background-size: 20px 20px;
+      font-family: "DM Sans", "Trebuchet MS", sans-serif;
+      font-size: 14px;
+    }
+    :root[data-theme="dark"] body { background-image: radial-gradient(#29382f 0.75px, transparent 0.75px); }
+    button, input, select { font: inherit; }
+    button { color: inherit; }
+    .shell { width: min(1120px, calc(100% - 40px)); margin: 0 auto; padding: 28px 0 44px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 34px; }
+    .brand { display: flex; align-items: center; gap: 10px; color: var(--ink); text-decoration: none; font-weight: 700; font-size: 17px; }
+    .brand-mark { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 11px; background: var(--green); color: white; font-size: 18px; }
+    .profile { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; }
+    .profile select { max-width: 105px; border: 1px solid var(--line); border-radius: 9px; background: var(--paper); color: var(--ink); padding: 7px 26px 7px 9px; cursor: pointer; }
+    .theme-toggle { border: 1px solid var(--line); border-radius: 9px; padding: 7px 10px; background: var(--paper); color: var(--ink); cursor: pointer; font-size: 12px; }
+    .avatar { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 50%; background: #f8dfbd; color: #684c2d; font-weight: 700; }
+    .welcome { display: flex; justify-content: space-between; align-items: end; margin-bottom: 23px; gap: 16px; }
+    .eyebrow { margin: 0 0 8px; color: var(--green); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+    h1 { margin: 0; font-family: Fraunces, Georgia, serif; font-size: clamp(29px, 4vw, 39px); line-height: 1.12; font-weight: 600; }
+    .welcome p:not(.eyebrow) { margin: 9px 0 0; color: var(--muted); }
+    .date-chip { flex-shrink: 0; margin-bottom: 2px; padding: 9px 13px; border: 1px solid var(--line); border-radius: 999px; background: rgba(255,254,250,.8); color: #5f6c64; font-size: 12px; }
+    .layout { display: grid; grid-template-columns: minmax(0, 1.58fr) minmax(270px, .92fr); gap: 18px; align-items: start; }
+    .stack { display: grid; gap: 18px; min-width: 0; }
+    .panel { border: 1px solid rgba(220, 228, 217, .9); border-radius: 14px; background: var(--paper); box-shadow: var(--shadow); }
+    :root[data-theme="dark"] .panel { border-color: var(--line); }
+    :root[data-theme="dark"] .text-input, :root[data-theme="dark"] .timer-btn:not(.start) { background: #26352c; color: var(--ink); }
+    :root[data-theme="dark"] .date-chip { background: var(--paper); color: var(--muted); }
+    :root[data-theme="dark"] .weather-panel { background: #302e23; }
+    :root[data-theme="dark"] .weather-place, :root[data-theme="dark"] .weather-description, :root[data-theme="dark"] .weather-foot { color: #c2baa0; }
+    :root[data-theme="dark"] .weather-foot strong { color: #eee5cc; }
+    :root[data-theme="dark"] .school-status, :root[data-theme="dark"] .school-source { color: #c2baa0; }
+    :root[data-theme="dark"] .task-row, :root[data-theme="dark"] .homework-row { border-color: #303d35; }
+    .panel-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 19px 20px 13px; }
+    .panel-title { margin: 0; font-size: 15px; font-weight: 700; }
+    .panel-note { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+    .count { display: grid; min-width: 28px; height: 28px; padding: 0 8px; place-items: center; border-radius: 9px; background: var(--green-soft); color: var(--green); font-size: 12px; font-weight: 700; }
+    .add-form { display: flex; gap: 8px; padding: 0 20px 15px; }
+    .text-input { width: 100%; min-width: 0; border: 1px solid var(--line); border-radius: 9px; padding: 10px 11px; outline: none; background: #fff; color: var(--ink); }
+    .text-input::placeholder { color: #a5aea6; }
+    .text-input:focus, select:focus-visible, button:focus-visible { outline: 3px solid rgba(50, 108, 84, .23); outline-offset: 2px; }
+    .primary-btn { flex: 0 0 auto; border: 0; border-radius: 9px; padding: 0 14px; background: var(--green); color: white; font-weight: 600; cursor: pointer; }
+    .primary-btn:hover { background: #285941; }
+    .task-list { margin: 0; padding: 0 20px 7px; list-style: none; }
+    .task-row { display: flex; align-items: center; gap: 11px; min-height: 44px; border-top: 1px solid #f0f2ed; }
+    .task-check { appearance: none; flex: 0 0 17px; width: 17px; height: 17px; margin: 0; border: 1.5px solid #c6d0c5; border-radius: 5px; cursor: pointer; }
+    .task-check:checked { border-color: var(--green); background: var(--green); }
+    .task-check:checked::after { display: block; content: "✓"; color: white; text-align: center; font-size: 12px; line-height: 15px; }
+    .task-label { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+    .task-row.is-done .task-label { color: #98a29a; text-decoration: line-through; }
+    .remove-btn { border: 0; padding: 7px; background: transparent; color: #9aa49c; cursor: pointer; font-size: 16px; line-height: 1; }
+    .remove-btn:hover { color: var(--coral); }
+    .empty-state { padding: 4px 0 13px; color: #98a29a; font-size: 12px; }
+    .homework-form { display: grid; grid-template-columns: minmax(0, 1fr) 132px auto; gap: 8px; padding: 0 20px 16px; }
+    .homework-form input[type="date"] { color: var(--muted); }
+    .homework-list { padding: 0 20px 9px; }
+    .homework-row { display: flex; gap: 11px; align-items: center; min-height: 52px; border-top: 1px solid #f0f2ed; }
+    .subject-dot { flex: 0 0 9px; width: 9px; height: 9px; border-radius: 50%; background: var(--yellow); }
+    .subject-dot.blue { background: #76a9b1; }
+    .subject-dot.coral { background: var(--coral); }
+    .homework-main { flex: 1; min-width: 0; }
+    .homework-name { font-weight: 600; overflow-wrap: anywhere; }
+    .homework-due { margin-top: 3px; color: var(--muted); font-size: 11px; }
+    .homework-row.is-done .homework-name { color: #98a29a; text-decoration: line-through; }
+    .weather-panel { overflow: hidden; background: #f9f5e9; }
+    .weather-inner { position: relative; padding: 19px 20px 18px; }
+    .weather-inner::after { position: absolute; right: -12px; top: -28px; width: 128px; height: 128px; border: 1px solid rgba(234,190,83,.28); border-radius: 50%; content: ""; box-shadow: 0 0 0 15px rgba(234,190,83,.08), 0 0 0 32px rgba(234,190,83,.06); pointer-events: none; }
+    .weather-top { display: flex; justify-content: space-between; align-items: start; position: relative; z-index: 1; }
+    .weather-place { color: #757463; font-size: 12px; }
+    .weather-icon { font-size: 29px; line-height: 1; }
+    .temperature { margin: 12px 0 2px; font-family: Fraunces, Georgia, serif; font-size: 42px; line-height: 1; }
+    .weather-description { color: #757463; font-size: 12px; }
+    .weather-foot { display: flex; justify-content: space-between; margin-top: 18px; padding-top: 12px; border-top: 1px solid rgba(211, 197, 156, .45); color: #777665; font-size: 11px; }
+    .weather-foot strong { color: #4f594f; font-weight: 600; }
+    .school-search { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 7px; margin-top: 14px; }
+    .school-search .text-input { padding: 8px; font-size: 12px; }
+    .school-search .primary-btn { padding: 0 10px; font-size: 12px; }
+    .school-results, .school-status, .school-source { grid-column: 1 / -1; margin: 0; font-size: 11px; }
+    .school-status, .school-source { color: #757463; }
+    .school-results { width: 100%; padding: 7px; }
+    .school-source a { color: inherit; }
+    .agenda { padding-bottom: 8px; }
+    .agenda-list { position: relative; margin: 0 20px; padding: 0 0 0 18px; list-style: none; }
+    .agenda-list::before { position: absolute; top: 6px; bottom: 11px; left: 4px; width: 1px; background: #e7ebe4; content: ""; }
+    .agenda-item { position: relative; display: flex; justify-content: space-between; gap: 8px; padding: 0 0 17px; }
+    .agenda-item::before { position: absolute; top: 4px; left: -18px; width: 9px; height: 9px; border: 2px solid var(--paper); border-radius: 50%; background: #8cb49a; content: ""; box-shadow: 0 0 0 1px #a5c4aa; }
+    .agenda-item:nth-child(2)::before { background: var(--yellow); box-shadow: 0 0 0 1px #e8cb75; }
+    .agenda-item:nth-child(3)::before { background: #81aeb7; box-shadow: 0 0 0 1px #a3c3c9; }
+    .agenda-event { font-weight: 600; }
+    .agenda-time { color: var(--muted); font-size: 11px; white-space: nowrap; }
+    .agenda-list { min-height: 91px; }
+    .focus { padding-bottom: 18px; text-align: center; }
+    .focus .panel-head { text-align: left; }
+    .timer { padding: 4px 0 2px; color: var(--green); font-family: Fraunces, Georgia, serif; font-size: 44px; font-variant-numeric: tabular-nums; line-height: 1.1; }
+    .timer-label { min-height: 18px; color: var(--muted); font-size: 11px; }
+    .timer-actions { display: flex; justify-content: center; gap: 8px; margin-top: 13px; }
+    .timer-btn { min-width: 77px; border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; background: white; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .timer-btn.start { border-color: var(--green); background: var(--green); color: white; }
+    .footer { padding-top: 22px; color: #879189; text-align: center; font-size: 11px; }
+    @media (max-width: 760px) {
+      .shell { width: min(100% - 28px, 540px); padding-top: 18px; }
+      .topbar { margin-bottom: 27px; }
+      .layout { grid-template-columns: 1fr; }
+      .stack { display: contents; }
+      .welcome { align-items: start; flex-direction: column; gap: 13px; }
+      .date-chip { order: 2; }
+      .homework-form { grid-template-columns: 1fr auto; }
+      .homework-form input[type="date"] { grid-column: 1 / 2; }
+      .homework-form .primary-btn { grid-column: 2; grid-row: 1 / span 2; }
+      .date-chip { align-self: start; }
+    }
+    @media (max-width: 380px) {
+      .profile > span:first-child { display: none; }
+      .profile select { max-width: 90px; }
+      .homework-form { padding-right: 14px; padding-left: 14px; }
+      .panel-head { padding-right: 15px; padding-left: 15px; }
+      .task-list, .homework-list { padding-right: 15px; padding-left: 15px; }
+      .add-form { padding-right: 15px; padding-left: 15px; }
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .panel { animation: settle .45s both; }
+      .stack .panel:nth-child(2) { animation-delay: .06s; }
+      .stack .panel:nth-child(3) { animation-delay: .12s; }
+      @keyframes settle { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Daybook home"><span class="brand-mark" aria-hidden="true">d</span>daybook</a>
+      <div class="profile">
+        <button class="theme-toggle" id="theme-toggle" type="button" aria-pressed="false">Dark mode</button>
+        <label class="visually-hidden" for="grade">Choose your grade</label>
+        <select id="grade" aria-label="Choose your grade">
+          <option value="K">Kindergarten</option><option value="1">1st grade</option><option value="2">2nd grade</option><option value="3">3rd grade</option><option value="4">4th grade</option><option value="5">5th grade</option><option value="6">6th grade</option><option value="7">7th grade</option><option value="8">8th grade</option><option value="9">9th grade</option><option value="10">10th grade</option><option value="11">11th grade</option><option value="12">12th grade</option>
+        </select>
+        <span class="avatar" aria-hidden="true">S</span>
+      </div>
+    </header>
+    <section class="welcome" aria-labelledby="welcome-heading">
+      <div><p class="eyebrow" id="today-label">YOUR DAY, AT A GLANCE</p><h1 id="welcome-heading">A fresh start.</h1><p id="welcome-note">One step at a time. You’ve got this.</p></div>
+      <div class="date-chip" id="today-date"></div>
+    </section>
+    <div class="layout">
+      <div class="stack">
+        <section class="panel" aria-labelledby="todo-heading">
+          <div class="panel-head"><div><h2 class="panel-title" id="todo-heading">My to-do list</h2><p class="panel-note" id="todo-note">Little steps add up.</p></div><span class="count" id="todo-count">0</span></div>
+          <form class="add-form" id="todo-form"><label class="visually-hidden" id="todo-input-label" for="todo-input">Add a task</label><input class="text-input" id="todo-input" maxlength="100" placeholder="Add something to do…" required><button class="primary-btn" type="submit" aria-label="Add to-do">Add</button></form>
+          <ul class="task-list" id="todo-list" aria-live="polite"></ul>
+        </section>
+        <section class="panel" aria-labelledby="homework-heading">
+          <div class="panel-head"><div><h2 class="panel-title" id="homework-heading">Homework</h2><p class="panel-note" id="homework-note">Keep track of what’s due.</p></div><span class="count" id="homework-count">0</span></div>
+          <form class="homework-form" id="homework-form"><label class="visually-hidden" id="homework-input-label" for="homework-input">Homework assignment</label><input class="text-input" id="homework-input" maxlength="100" placeholder="Add an assignment…" required><label class="visually-hidden" for="homework-date">Due date</label><input class="text-input" id="homework-date" type="date"><button class="primary-btn" type="submit" aria-label="Add homework">Add</button></form>
+          <div class="homework-list" id="homework-list" aria-live="polite"></div>
+        </section>
+      </div>
+      <aside class="stack" aria-label="Daily details">
+        <section class="panel weather-panel" aria-labelledby="weather-heading">
+          <div class="weather-inner">
+            <div class="weather-top"><div><h2 class="panel-title" id="weather-heading">Weather near a school</h2><div class="weather-place" id="weather-place">Detroit, Michigan</div></div><span class="weather-icon" id="weather-icon" aria-hidden="true">☀️</span></div>
+            <div class="temperature" id="temperature" aria-live="polite">--°</div><div class="weather-description" id="weather-description">Checking the weather…</div>
+            <div class="weather-foot"><span>Feels like school weather</span><strong id="weather-updated">Live forecast</strong></div>
+            <form class="school-search" id="school-search">
+              <label class="visually-hidden" for="school-query">Search US schools</label>
+              <input class="text-input" id="school-query" maxlength="100" placeholder="Search a US school…" required>
+              <button class="primary-btn" type="submit">Search</button>
+              <select class="school-results" id="school-results" aria-label="Choose a school" hidden></select>
+              <p class="school-status" id="school-status" aria-live="polite"></p>
+              <p class="school-source">School data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a></p>
+            </form>
+          </div>
+        </section>
+        <section class="panel agenda" aria-labelledby="agenda-heading">
+          <div class="panel-head"><div><h2 class="panel-title" id="agenda-heading">Today’s rhythm</h2><p class="panel-note" id="agenda-note">A little structure goes a long way.</p></div></div>
+          <ol class="agenda-list" id="agenda-list"></ol>
+        </section>
+        <section class="panel focus" aria-labelledby="focus-heading">
+          <div class="panel-head"><div><h2 class="panel-title" id="focus-heading">Focus time</h2><p class="panel-note" id="focus-note">One thing at a time.</p></div></div>
+          <div class="timer" id="timer" aria-live="off">25:00</div><div class="timer-label" id="timer-label">Ready when you are</div>
+          <div class="timer-actions"><button class="timer-btn start" id="timer-start" type="button">Start</button><button class="timer-btn" id="timer-reset" type="button">Reset</button></div>
+        </section>
+      </aside>
+    </div>
+    <footer class="footer">Your daybook stays on this device.</footer>
+  </main>
+  <script>
+    const storageKey = "daybook-student-v1";
+    const today = new Date();
+    const dateFormatter = new Intl.DateTimeFormat(undefined, { weekday: "long", month: "long", day: "numeric" });
+    document.querySelector("#today-date").textContent = dateFormatter.format(today);
+
+    let saved = {};
+    try { saved = JSON.parse(localStorage.getItem(storageKey) || "{}"); } catch { saved = {}; }
+    const state = {
+      grade: saved.grade || "5",
+      todos: Array.isArray(saved.todos) ? saved.todos : [
+      ],
+      homework: Array.isArray(saved.homework) ? saved.homework : [],
+      school: saved.school && Number.isFinite(Number(saved.school.latitude)) && Number.isFinite(Number(saved.school.longitude)) ? saved.school : null
+    };
+    const grade = document.querySelector("#grade");
+    grade.value = state.grade;
+    const gradeLabel = () => grade.value === "K" ? "Kindergarten" : `${grade.value}${["1", "2", "3"].includes(grade.value) ? ({ "1": "st", "2": "nd", "3": "rd" }[grade.value]) : "th"} grade`;
+    const gradeProfiles = {
+      kindergarten: {
+        welcome: "Small steps make a big day. Ask a grown-up to help you get started!",
+        todoTitle: "My little wins", todoNote: "Try: pack your bag or put away your books.",
+        todoPlaceholder: "What would you like to do?",
+        assignmentTitle: "Practice together", assignmentNote: "A grown-up can help you remember.",
+        assignmentPlaceholder: "Read a story or practice counting…", assignmentLabel: "Practice activity",
+        agendaTitle: "My school-day plan", agendaNote: "Learn, move, and get ready for tomorrow.",
+        agenda: [["Read or count with a grown-up", "First"], ["Move, stretch, or play", "Break time"], ["Pack your bag together", "Later"]],
+        focusTitle: "Little focus break", focusNote: "A short, grown-up-supported activity.", minutes: 10, ready: "Ready for a little learning?"
+      },
+      early: {
+        welcome: "Pick one small thing to do first. You can do it!",
+        todoTitle: "My to-do list", todoNote: "Try: read a book or pack your backpack.",
+        todoPlaceholder: "What do you need to do?",
+        assignmentTitle: "Homework & practice", assignmentNote: "Remember reading, spelling, and math practice.",
+        assignmentPlaceholder: "Add homework or practice…", assignmentLabel: "Homework or practice",
+        agendaTitle: "My after-school plan", agendaNote: "Make room for learning, play, and rest.",
+        agenda: [["Have a snack and unpack", "First"], ["Read or practice spelling", "Study time"], ["Pack your backpack", "Before bed"]],
+        focusTitle: "Focus time", focusNote: "A short session, then take a movement break.", minutes: 15, ready: "Ready when you are!"
+      },
+      elementary: {
+        welcome: "Choose a priority, then celebrate each little win.",
+        todoTitle: "My priorities", todoNote: "Try: finish a project or get your things ready.",
+        todoPlaceholder: "Add a task or reminder…",
+        assignmentTitle: "Homework & projects", assignmentNote: "Keep track of assignments, projects, and due dates.",
+        assignmentPlaceholder: "Add homework or a project…", assignmentLabel: "Homework or project",
+        agendaTitle: "Plan your afternoon", agendaNote: "A simple plan makes room for breaks, too.",
+        agenda: [["Start with one assignment", "First"], ["Take a movement break", "Midway"], ["Check your backpack", "Before bed"]],
+        focusTitle: "Focus time", focusNote: "Work on one assignment, then take a break.", minutes: 20, ready: "Ready to get started?"
+      },
+      middle: {
+        welcome: "Balance classes, activities, and time to recharge.",
+        todoTitle: "My priorities", todoNote: "Break big projects into smaller next steps.",
+        todoPlaceholder: "Add a task, project step, or reminder…",
+        assignmentTitle: "Classes & assignments", assignmentNote: "Track homework, tests, and project deadlines.",
+        assignmentPlaceholder: "Add an assignment or test…", assignmentLabel: "Class assignment or test",
+        agendaTitle: "Plan your study time", agendaNote: "Mix focused work with breaks and activities.",
+        agenda: [["Review notes from one class", "First"], ["Stretch or take a screen break", "Midway"], ["Check tomorrow’s schedule", "Later"]],
+        focusTitle: "Study session", focusNote: "Focus on one class or project at a time.", minutes: 25, ready: "Ready for a study session?"
+      },
+      high: {
+        welcome: "Make space for coursework, activities, and your goals.",
+        todoTitle: "My priorities & goals", todoNote: "Turn big goals into next actions you can finish.",
+        todoPlaceholder: "Add a study goal or next step…",
+        assignmentTitle: "Assignments & exams", assignmentNote: "Keep coursework, tests, and deadlines in one place.",
+        assignmentPlaceholder: "Add coursework or an exam…", assignmentLabel: "Coursework or exam",
+        agendaTitle: "Your study plan", agendaNote: "Prioritize deadlines and protect time to recharge.",
+        agenda: [["Tackle the nearest deadline", "First"], ["Take a real screen-free break", "Midway"], ["Set tomorrow’s top priority", "Later"]],
+        focusTitle: "Deep-focus session", focusNote: "Choose one class, exam, or project.", minutes: 30, ready: "Ready to focus?"
+      },
+      senior: {
+        welcome: "Stay on top of senior-year deadlines and what comes next.",
+        todoTitle: "Senior-year priorities", todoNote: "Add coursework, applications, and life admin.",
+        todoPlaceholder: "Add a priority or next step…",
+        assignmentTitle: "Coursework & deadlines", assignmentNote: "Track assignments, exams, applications, and scholarships.",
+        assignmentPlaceholder: "Add coursework or a future-plan deadline…", assignmentLabel: "Coursework or deadline",
+        agendaTitle: "Your senior-year plan", agendaNote: "Keep coursework moving while making time for next steps.",
+        agenda: [["Work on the nearest class deadline", "First"], ["Take a proper break", "Midway"], ["One college, career, or scholarship step", "Later"]],
+        focusTitle: "Focused work session", focusNote: "Pick one class task or post-graduation next step.", minutes: 30, ready: "Ready to make progress?"
+      }
+    };
+    const themeToggle = document.querySelector("#theme-toggle");
+    function setTheme(theme) {
+      document.documentElement.dataset.theme = theme;
+      themeToggle.textContent = theme === "dark" ? "Light mode" : "Dark mode";
+      themeToggle.setAttribute("aria-pressed", String(theme === "dark"));
+      state.theme = theme;
+      persist();
+    }
+    themeToggle.addEventListener("click", () => {
+      setTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
+    });
+    setTheme(saved.theme === "dark" ? "dark" : "light");
+    function selectedGradeProfile() {
+      if (grade.value === "K") return gradeProfiles.kindergarten;
+      const level = Number(grade.value);
+      if (level <= 2) return gradeProfiles.early;
+      if (level <= 5) return gradeProfiles.elementary;
+      if (level <= 8) return gradeProfiles.middle;
+      if (level <= 11) return gradeProfiles.high;
+      return gradeProfiles.senior;
+    }
+    function persist() {
+      try { localStorage.setItem(storageKey, JSON.stringify(state)); } catch { /* Storage may be unavailable in private browsing. */ }
+    }
+    function escapeText(value) {
+      const element = document.createElement("span");
+      element.textContent = value;
+      return element.innerHTML;
+    }
+    function renderTodos() {
+      const list = document.querySelector("#todo-list");
+      const remaining = state.todos.filter(item => !item.done).length;
+      document.querySelector("#todo-count").textContent = remaining;
+      list.innerHTML = state.todos.length ? state.todos.map(item => `<li class="task-row ${item.done ? "is-done" : ""}"><input class="task-check" type="checkbox" data-todo-check="${item.id}" ${item.done ? "checked" : ""} aria-label="Mark ${escapeText(item.text)} ${item.done ? "not done" : "done"}"><span class="task-label">${escapeText(item.text)}</span><button class="remove-btn" type="button" data-todo-remove="${item.id}" aria-label="Remove ${escapeText(item.text)}">×</button></li>`).join("") : '<li class="empty-state">Nothing on your list. Nice and clear.</li>';
+    }
+    function dueLabel(value) {
+      if (!value) return "No due date";
+      const due = new Date(`${value}T12:00:00`);
+      const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+      const dueStart = new Date(due); dueStart.setHours(0, 0, 0, 0);
+      const days = Math.round((dueStart - todayStart) / 86400000);
+      if (days === 0) return "Due today";
+      if (days === 1) return "Due tomorrow";
+      if (days < 0) return `Was due ${new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(due)}`;
+      return `Due ${new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(due)}`;
+    }
+    function renderHomework() {
+      const list = document.querySelector("#homework-list");
+      const remaining = state.homework.filter(item => !item.done).length;
+      document.querySelector("#homework-count").textContent = remaining;
+      list.innerHTML = state.homework.length ? state.homework.map((item, index) => `<div class="homework-row ${item.done ? "is-done" : ""}"><input class="task-check" type="checkbox" data-homework-check="${item.id}" ${item.done ? "checked" : ""} aria-label="Mark ${escapeText(item.text)} ${item.done ? "not done" : "done"}"><span class="subject-dot ${["", "blue", "coral"][index % 3]}" aria-hidden="true"></span><div class="homework-main"><div class="homework-name">${escapeText(item.text)}</div><div class="homework-due">${dueLabel(item.due)}</div></div><button class="remove-btn" type="button" data-homework-remove="${item.id}" aria-label="Remove ${escapeText(item.text)}">×</button></div>`).join("") : '<div class="empty-state">Your homework list is clear. Add an assignment above.</div>';
+    }
+    function applyGradeProfile() {
+      const profile = selectedGradeProfile();
+      document.querySelector("#welcome-heading").textContent = `Ready for ${gradeLabel()}?`;
+      document.querySelector("#welcome-note").textContent = profile.welcome;
+      document.querySelector("#todo-heading").textContent = profile.todoTitle;
+      document.querySelector("#todo-note").textContent = profile.todoNote;
+      document.querySelector("#todo-input").placeholder = profile.todoPlaceholder;
+      document.querySelector("#todo-input-label").textContent = profile.todoPlaceholder;
+      document.querySelector("#homework-heading").textContent = profile.assignmentTitle;
+      document.querySelector("#homework-note").textContent = profile.assignmentNote;
+      document.querySelector("#homework-input").placeholder = profile.assignmentPlaceholder;
+      document.querySelector("#homework-input-label").textContent = profile.assignmentLabel;
+      document.querySelector("#homework-form button").setAttribute("aria-label", `Add ${profile.assignmentLabel.toLowerCase()}`);
+      document.querySelector("#agenda-heading").textContent = profile.agendaTitle;
+      document.querySelector("#agenda-note").textContent = profile.agendaNote;
+      document.querySelector("#agenda-list").innerHTML = profile.agenda.map(([event, time]) => `<li class="agenda-item"><span class="agenda-event">${event}</span><span class="agenda-time">${time}</span></li>`).join("");
+      document.querySelector("#focus-heading").textContent = profile.focusTitle;
+      document.querySelector("#focus-note").textContent = profile.focusNote;
+      resetFocusTimer(profile);
+    }
+    grade.addEventListener("change", () => { state.grade = grade.value; applyGradeProfile(); persist(); });
+    document.querySelector("#todo-form").addEventListener("submit", event => {
+      event.preventDefault();
+      const input = document.querySelector("#todo-input");
+      if (!input.value.trim()) return;
+      state.todos.push({ id: crypto.randomUUID(), text: input.value.trim(), done: false });
+      input.value = ""; persist(); renderTodos(); input.focus();
+    });
+    document.querySelector("#homework-form").addEventListener("submit", event => {
+      event.preventDefault();
+      const input = document.querySelector("#homework-input");
+      if (!input.value.trim()) return;
+      state.homework.push({ id: crypto.randomUUID(), text: input.value.trim(), due: document.querySelector("#homework-date").value, done: false });
+      input.value = ""; document.querySelector("#homework-date").value = ""; persist(); renderHomework(); input.focus();
+    });
+    document.querySelector("#todo-list").addEventListener("change", event => {
+      const id = event.target.dataset.todoCheck;
+      if (!id) return;
+      const item = state.todos.find(todo => todo.id === id); item.done = event.target.checked; persist(); renderTodos();
+    });
+    document.querySelector("#todo-list").addEventListener("click", event => {
+      const id = event.target.dataset.todoRemove;
+      if (!id) return;
+      state.todos = state.todos.filter(item => item.id !== id); persist(); renderTodos();
+    });
+    document.querySelector("#homework-list").addEventListener("change", event => {
+      const id = event.target.dataset.homeworkCheck;
+      if (!id) return;
+      const item = state.homework.find(homework => homework.id === id); item.done = event.target.checked; persist(); renderHomework();
+    });
+    document.querySelector("#homework-list").addEventListener("click", event => {
+      const id = event.target.dataset.homeworkRemove;
+      if (!id) return;
+      state.homework = state.homework.filter(item => item.id !== id); persist(); renderHomework();
+    });
+    renderTodos(); renderHomework();
+
+    const weatherDescriptions = { 0: ["Clear skies", "☀️"], 1: ["Mostly sunny", "🌤️"], 2: ["Partly cloudy", "⛅"], 3: ["Cloudy", "☁️"], 45: ["Foggy", "🌫️"], 48: ["Foggy", "🌫️"], 51: ["Light drizzle", "🌦️"], 53: ["Drizzle", "🌦️"], 55: ["Drizzle", "🌧️"], 61: ["Light rain", "🌦️"], 63: ["Rain", "🌧️"], 65: ["Heavy rain", "🌧️"], 71: ["Light snow", "🌨️"], 73: ["Snow", "❄️"], 75: ["Heavy snow", "❄️"], 80: ["Passing showers", "🌦️"], 81: ["Showers", "🌧️"], 82: ["Heavy showers", "🌧️"], 95: ["Thunderstorms", "⛈️"] };
+    const defaultWeatherLocation = { latitude: 42.33, longitude: -83.05, name: "Detroit, Michigan" };
+    const schoolStatus = document.querySelector("#school-status");
+    let weatherRequest = 0;
+    async function loadWeather(location) {
+      const requestId = ++weatherRequest;
+      const temperature = document.querySelector("#temperature");
+      const description = document.querySelector("#weather-description");
+      const params = new URLSearchParams({
+        latitude: location.latitude,
+        longitude: location.longitude,
+        current: "temperature_2m,weather_code",
+        temperature_unit: "fahrenheit",
+        timezone: "auto"
+      });
+      description.textContent = "Checking the weather…";
+      try {
+        const response = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`);
+        if (!response.ok) throw new Error("Weather unavailable");
+        const data = await response.json();
+        if (requestId !== weatherRequest) return;
+        const current = data.current;
+        const [label, icon] = weatherDescriptions[current.weather_code] || ["Current conditions", "🌤️"];
+        temperature.textContent = `${Math.round(current.temperature_2m)}°`;
+        description.textContent = label;
+        document.querySelector("#weather-icon").textContent = icon;
+        document.querySelector("#weather-updated").textContent = `Updated ${new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(new Date(current.time))}`;
+        if (state.school === location) schoolStatus.textContent = `Showing weather near ${location.name}.`;
+      } catch {
+        if (requestId !== weatherRequest) return;
+        temperature.textContent = "--°";
+        description.textContent = "Weather is unavailable right now.";
+        document.querySelector("#weather-updated").textContent = "Try again later";
+        if (state.school === location) schoolStatus.textContent = "Weather is unavailable right now.";
+      }
+    }
+    document.querySelector("#weather-place").textContent = state.school?.name || defaultWeatherLocation.name;
+    loadWeather(state.school || defaultWeatherLocation);
+
+    const schoolSearch = document.querySelector("#school-search");
+    const schoolQuery = document.querySelector("#school-query");
+    const schoolResults = document.querySelector("#school-results");
+    let schools = [];
+    schoolSearch.addEventListener("submit", async event => {
+      event.preventDefault();
+      const button = schoolSearch.querySelector("button");
+      button.disabled = true;
+      schoolStatus.textContent = "Searching US schools…";
+      schoolResults.hidden = true;
+      try {
+        const params = new URLSearchParams({
+          q: `${schoolQuery.value.trim()}, United States`,
+          countrycodes: "us",
+          format: "jsonv2",
+          addressdetails: "1",
+          limit: "8"
+        });
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?${params}`);
+        if (!response.ok) throw new Error("School search is unavailable.");
+        const places = await response.json();
+        schools = places.filter(place => ["school", "college", "university", "kindergarten"].includes(place.type) && Number.isFinite(Number(place.lat)) && Number.isFinite(Number(place.lon)));
+        if (!schools.length) {
+          schoolStatus.textContent = "No matching schools found. Try adding the city or state.";
+          return;
+        }
+        schoolResults.replaceChildren(new Option("Choose a school…", ""));
+        schools.forEach((place, index) => {
+          const address = place.address || {};
+          const city = address.city || address.town || address.village;
+          const detail = [city, address.state].filter(Boolean).join(", ");
+          schoolResults.add(new Option(`${place.name || "School"}${detail ? ` — ${detail}` : ""}`, String(index)));
+        });
+        schoolResults.hidden = false;
+        schoolStatus.textContent = `${schools.length} school results.`;
+      } catch {
+        schoolStatus.textContent = "Could not search schools. Please try again.";
+      } finally {
+        setTimeout(() => { button.disabled = false; }, 1000);
+      }
+    });
+    schoolResults.addEventListener("change", () => {
+      if (!schoolResults.value) return;
+      const place = schools[Number(schoolResults.value)];
+      if (!place) return;
+      const option = schoolResults.selectedOptions[0];
+      state.school = { name: option.textContent, latitude: Number(place.lat), longitude: Number(place.lon) };
+      document.querySelector("#weather-place").textContent = state.school.name;
+      schoolStatus.textContent = "Loading nearby weather…";
+      persist();
+      loadWeather(state.school);
+    });
+
+    let seconds = 25 * 60;
+    let timerHandle;
+    const timerDisplay = document.querySelector("#timer");
+    const timerButton = document.querySelector("#timer-start");
+    function updateTimer() {
+      timerDisplay.textContent = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+    }
+    timerButton.addEventListener("click", () => {
+      if (timerHandle) {
+        clearInterval(timerHandle); timerHandle = undefined; timerButton.textContent = "Resume";
+        document.querySelector("#timer-label").textContent = "Paused. Take your time.";
+        return;
+      }
+      timerButton.textContent = "Pause";
+      document.querySelector("#timer-label").textContent = "You’re doing great. Keep going.";
+      timerHandle = setInterval(() => {
+        seconds -= 1; updateTimer();
+        if (seconds <= 0) {
+          clearInterval(timerHandle); timerHandle = undefined; seconds = 0; updateTimer();
+          timerButton.textContent = "Start";
+          document.querySelector("#timer-label").textContent = "Time for a little break!";
+        }
+      }, 1000);
+    });
+    function resetFocusTimer(profile = selectedGradeProfile()) {
+      clearInterval(timerHandle);
+      timerHandle = undefined;
+      seconds = profile.minutes * 60;
+      updateTimer();
+      timerButton.textContent = "Start";
+      document.querySelector("#timer-label").textContent = profile.ready;
+    }
+    document.querySelector("#timer-reset").addEventListener("click", () => {
+      resetFocusTimer();
+    });
+    applyGradeProfile();
+  </script>
+</body>
+</html>
