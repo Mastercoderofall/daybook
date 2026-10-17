@@ -120,16 +120,25 @@
     .school-status, .school-source { color: #757463; }
     .school-results { width: 100%; padding: 7px; }
     .school-source a { color: inherit; }
-    .agenda { padding-bottom: 8px; }
+    .agenda { padding-bottom: 16px; }
     .agenda-list { position: relative; margin: 0 20px; padding: 0 0 0 18px; list-style: none; }
     .agenda-list::before { position: absolute; top: 6px; bottom: 11px; left: 4px; width: 1px; background: #e7ebe4; content: ""; }
-    .agenda-item { position: relative; display: flex; justify-content: space-between; gap: 8px; padding: 0 0 17px; }
+    .agenda-item { position: relative; display: flex; justify-content: space-between; align-items: start; gap: 8px; padding: 0 0 17px; }
     .agenda-item::before { position: absolute; top: 4px; left: -18px; width: 9px; height: 9px; border: 2px solid var(--paper); border-radius: 50%; background: #8cb49a; content: ""; box-shadow: 0 0 0 1px #a5c4aa; }
     .agenda-item:nth-child(2)::before { background: var(--yellow); box-shadow: 0 0 0 1px #e8cb75; }
     .agenda-item:nth-child(3)::before { background: #81aeb7; box-shadow: 0 0 0 1px #a3c3c9; }
-    .agenda-event { font-weight: 600; }
-    .agenda-time { color: var(--muted); font-size: 11px; white-space: nowrap; }
-    .agenda-list { min-height: 91px; }
+    .agenda-copy { flex: 1; min-width: 0; }
+    .agenda-event { font-weight: 600; overflow-wrap: anywhere; }
+    .agenda-time { margin-top: 3px; color: var(--muted); font-size: 11px; }
+    .agenda-actions { display: flex; gap: 2px; margin: -5px -7px 0 0; }
+    .agenda-action { border: 0; border-radius: 6px; padding: 5px 6px; background: transparent; color: var(--muted); cursor: pointer; font-size: 11px; }
+    .agenda-action:hover { background: var(--green-soft); color: var(--green); }
+    .agenda-editor, .agenda-add-form { display: grid; grid-template-columns: minmax(0, 1fr) minmax(90px, .7fr) auto; gap: 6px; }
+    .agenda-editor { width: 100%; }
+    .agenda-editor .text-input, .agenda-add-form .text-input { padding: 7px 8px; font-size: 12px; }
+    .agenda-editor .primary-btn, .agenda-add-form .primary-btn { padding: 0 10px; font-size: 12px; }
+    .agenda-editor .agenda-cancel { grid-column: 1 / -1; justify-self: end; }
+    .agenda-add-form { margin: 0 20px; }
     .focus { padding-bottom: 18px; text-align: center; }
     .focus .panel-head { text-align: left; }
     .timer { padding: 4px 0 2px; color: var(--green); font-family: Fraunces, Georgia, serif; font-size: 44px; font-variant-numeric: tabular-nums; line-height: 1.1; }
@@ -215,6 +224,11 @@
         <section class="panel agenda" aria-labelledby="agenda-heading">
           <div class="panel-head"><div><h2 class="panel-title" id="agenda-heading">Today’s rhythm</h2><p class="panel-note" id="agenda-note">A little structure goes a long way.</p></div></div>
           <ol class="agenda-list" id="agenda-list"></ol>
+          <form class="agenda-add-form" id="agenda-add-form">
+            <label class="visually-hidden" for="agenda-input">Add an activity</label><input class="text-input" id="agenda-input" name="text" maxlength="100" placeholder="Add an activity…" required>
+            <label class="visually-hidden" for="agenda-time">Time or part of day</label><input class="text-input" id="agenda-time" name="time" maxlength="30" placeholder="When?">
+            <button class="primary-btn" type="submit" aria-label="Add schedule activity">Add</button>
+          </form>
         </section>
         <section class="panel focus" aria-labelledby="focus-heading">
           <div class="panel-head"><div><h2 class="panel-title" id="focus-heading">Focus time</h2><p class="panel-note" id="focus-note">One thing at a time.</p></div></div>
@@ -238,6 +252,7 @@
       todos: Array.isArray(saved.todos) ? saved.todos : [
       ],
       homework: Array.isArray(saved.homework) ? saved.homework : [],
+      agendas: saved.agendas && typeof saved.agendas === "object" && !Array.isArray(saved.agendas) ? saved.agendas : {},
       school: saved.school && Number.isFinite(Number(saved.school.latitude)) && Number.isFinite(Number(saved.school.longitude)) ? saved.school : null
     };
     const grade = document.querySelector("#grade");
@@ -326,6 +341,23 @@
       if (level <= 11) return gradeProfiles.high;
       return gradeProfiles.senior;
     }
+    function agendaItemsForGrade(profile = selectedGradeProfile()) {
+      if (Object.prototype.hasOwnProperty.call(state.agendas, grade.value) && Array.isArray(state.agendas[grade.value])) {
+        return state.agendas[grade.value];
+      }
+      return profile.agenda.map(([text, time], index) => ({ id: `default-${grade.value}-${index}`, text, time }));
+    }
+    let editingAgendaId = null;
+    function renderAgenda(profile = selectedGradeProfile()) {
+      const list = document.querySelector("#agenda-list");
+      const items = agendaItemsForGrade(profile);
+      list.innerHTML = items.length ? items.map(item => {
+        if (item.id === editingAgendaId) {
+          return `<li class="agenda-item"><form class="agenda-editor" data-agenda-editor="${escapeText(item.id)}"><input class="text-input" name="text" aria-label="Activity" maxlength="100" value="${escapeText(item.text)}" required><input class="text-input" name="time" aria-label="Time or part of day" maxlength="30" value="${escapeText(item.time || "")}"><button class="primary-btn" type="submit">Save</button><button class="agenda-action agenda-cancel" type="button" data-agenda-cancel>Cancel</button></form></li>`;
+        }
+        return `<li class="agenda-item"><div class="agenda-copy"><div class="agenda-event">${escapeText(item.text)}</div><div class="agenda-time">${escapeText(item.time || "Anytime")}</div></div><div class="agenda-actions"><button class="agenda-action" type="button" data-agenda-edit="${escapeText(item.id)}" aria-label="Edit ${escapeText(item.text)}">Edit</button><button class="agenda-action" type="button" data-agenda-remove="${escapeText(item.id)}" aria-label="Remove ${escapeText(item.text)}">Remove</button></div></li>`;
+      }).join("") : '<li class="empty-state">No activities planned yet. Add one below.</li>';
+    }
     function persist() {
       try { localStorage.setItem(storageKey, JSON.stringify(state)); } catch { /* Storage may be unavailable in private browsing. */ }
     }
@@ -372,12 +404,56 @@
       document.querySelector("#homework-form button").setAttribute("aria-label", `Add ${profile.assignmentLabel.toLowerCase()}`);
       document.querySelector("#agenda-heading").textContent = profile.agendaTitle;
       document.querySelector("#agenda-note").textContent = profile.agendaNote;
-      document.querySelector("#agenda-list").innerHTML = profile.agenda.map(([event, time]) => `<li class="agenda-item"><span class="agenda-event">${event}</span><span class="agenda-time">${time}</span></li>`).join("");
+      renderAgenda(profile);
       document.querySelector("#focus-heading").textContent = profile.focusTitle;
       document.querySelector("#focus-note").textContent = profile.focusNote;
       resetFocusTimer(profile);
     }
-    grade.addEventListener("change", () => { state.grade = grade.value; applyGradeProfile(); persist(); });
+    grade.addEventListener("change", () => { state.grade = grade.value; editingAgendaId = null; applyGradeProfile(); persist(); });
+    document.querySelector("#agenda-add-form").addEventListener("submit", event => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const text = form.elements.text.value.trim();
+      if (!text) return;
+      const items = agendaItemsForGrade();
+      items.push({ id: crypto.randomUUID(), text, time: form.elements.time.value.trim() });
+      state.agendas[grade.value] = items;
+      editingAgendaId = null;
+      persist(); renderAgenda(); form.reset(); form.elements.text.focus();
+    });
+    document.querySelector("#agenda-list").addEventListener("submit", event => {
+      const form = event.target.closest("[data-agenda-editor]");
+      if (!form) return;
+      event.preventDefault();
+      const items = agendaItemsForGrade();
+      const item = items.find(entry => entry.id === form.dataset.agendaEditor);
+      const text = form.elements.text.value.trim();
+      if (!item || !text) return;
+      item.text = text;
+      item.time = form.elements.time.value.trim();
+      state.agendas[grade.value] = items;
+      editingAgendaId = null;
+      persist(); renderAgenda();
+    });
+    document.querySelector("#agenda-list").addEventListener("click", event => {
+      const editButton = event.target.closest("[data-agenda-edit]");
+      if (editButton) {
+        editingAgendaId = editButton.dataset.agendaEdit;
+        renderAgenda();
+        document.querySelector('[data-agenda-editor] input[name="text"]').focus();
+        return;
+      }
+      if (event.target.closest("[data-agenda-cancel]")) {
+        editingAgendaId = null;
+        renderAgenda();
+        return;
+      }
+      const removeButton = event.target.closest("[data-agenda-remove]");
+      if (!removeButton) return;
+      state.agendas[grade.value] = agendaItemsForGrade().filter(item => item.id !== removeButton.dataset.agendaRemove);
+      editingAgendaId = null;
+      persist(); renderAgenda();
+    });
     document.querySelector("#todo-form").addEventListener("submit", event => {
       event.preventDefault();
       const input = document.querySelector("#todo-input");
